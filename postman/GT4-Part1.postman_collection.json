@@ -1,0 +1,565 @@
+{
+  "info": {
+    "name": "Campus Lost & Found \u2014 GT4 Part 1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run npm run seed:items and start the API first. Run requests in order. Each run creates two disposable demo student accounts and deletes its demo claim. Tokens start empty and are saved only by login."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "demoPassword",
+      "value": "LearnClaims123!",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "otherEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "otherToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "itemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "claimId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "pm.test(\"Database connected\", () => pm.expect(pm.response.json().db).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Register student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Demo Student\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const suffix = Date.now().toString() + \"-\" + Math.floor(Math.random() * 1000000);",
+              "pm.collectionVariables.set(\"email\", \"student-\" + suffix + \"@example.com\");",
+              "pm.collectionVariables.set(\"otherEmail\", \"other-\" + suffix + \"@example.com\");"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.expect(pm.response.code).to.eql(201));",
+              "pm.test(\"No password in response\", () => pm.expect(pm.response.json()).not.to.have.property(\"password\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Login student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "if (pm.response.code === 200) { const data = pm.response.json(); pm.collectionVariables.set(\"token\", data.token); pm.collectionVariables.set(\"userId\", data.user.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Register another student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Other Student\",\n  \"email\": \"{{otherEmail}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.expect(pm.response.code).to.eql(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Login another student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{otherEmail}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "if (pm.response.code === 200) pm.collectionVariables.set(\"otherToken\", pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 List items and select one",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/items"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "const items = pm.response.json();",
+              "pm.test(\"Sample items exist; run npm run seed:items first\", () => pm.expect(items.length).to.be.above(0));",
+              "if (items.length) pm.collectionVariables.set(\"itemId\", items[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Claims without token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/claims",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.expect(pm.response.code).to.eql(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Reject short proof",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/claims",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"itemId\": \"{{itemId}}\",\n  \"proofDescription\": \"short\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.expect(pm.response.code).to.eql(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Create claim",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/claims",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"itemId\": \"{{itemId}}\",\n  \"proofDescription\": \"My initials are engraved on the underside of this item.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.expect(pm.response.code).to.eql(201));",
+              "if (pm.response.code === 201) { const claim = pm.response.json(); pm.collectionVariables.set(\"claimId\", claim.id); pm.test(\"Ownership comes from token\", () => pm.expect(claim.claimantId).to.eql(pm.collectionVariables.get(\"userId\"))); pm.test(\"Claim starts pending\", () => pm.expect(claim.status).to.eql(\"pending\")); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 List my claims",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/claims"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "pm.test(\"Created claim is present\", () => pm.expect(pm.response.json().some(claim => claim.id === pm.collectionVariables.get(\"claimId\"))).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Read my claim",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/claims/{{claimId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Another user cannot read my claim",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/claims/{{claimId}}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{otherToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.expect(pm.response.code).to.eql(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Edit proof",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/claims/{{claimId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"proofDescription\": \"There is also a red sticker inside the lid.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "pm.test(\"Response has updated proof\", () => pm.expect(pm.response.json().proofDescription).to.eql(\"There is also a red sticker inside the lid.\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Update validation still runs",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/claims/{{claimId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"proofDescription\": \"short\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.expect(pm.response.code).to.eql(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Students cannot approve claims",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/claims/{{claimId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.expect(pm.response.code).to.eql(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 Delete claim",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/claims/{{claimId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", () => pm.expect(pm.response.code).to.eql(204));",
+              "pm.test(\"No response body\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 Deleted claim is missing",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/claims/{{claimId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.expect(pm.response.code).to.eql(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
