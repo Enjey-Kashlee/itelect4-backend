@@ -99,6 +99,7 @@ test("every claim method requires authentication and invalid tokens are rejected
     assert.equal((await request(method, path, undefined, null)).status, 401);
   }
   for (const token of ["hello", jwt.sign({ userId: aliceId }, jwtSecret, { expiresIn: -1 }),
+    jwt.sign({ userId: aliceId }, "a-different-signing-secret", { expiresIn: "2h" }),
     jwt.sign({ userId: aliceId }, jwtSecret, { algorithm: "HS384", expiresIn: "2h" }),
     jwt.sign({ userId: "not-an-id" }, jwtSecret, { expiresIn: "2h" })]) {
     assert.equal((await request("GET", "/api/claims", undefined, token)).status, 401);

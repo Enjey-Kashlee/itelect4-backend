@@ -10,7 +10,7 @@ MongoDB stores documents, which resemble JavaScript objects. A collection groups
 
 ## 2. Startup: server.ts, config/env.ts, and config/db.ts
 
-`server.ts` loads `.env` into `process.env`, validates settings, connects MongoDB, then starts listening on the configured port. `config/env.ts` checks the secret, URI, and port before they are used. `config/db.ts` contains the actual database connection call and limits how long connection selection can wait.
+`server.ts` loads `.env` into `process.env`, validates settings, connects MongoDB, then starts listening on the configured port. `config/env.ts` checks the secret, URI, and port before they are used. `config/db.ts` contains the actual database connection call and limits how long connection selection can wait. It also awaits `User.init()` so the unique email index is ready before registrations can arrive; an index failure stops startup.
 
 `app.ts` assembles Express without opening a port. That separation lets tests build the same app with test settings and run it on an available temporary port. The production process uses `server.ts`; tests use `createApp()`.
 

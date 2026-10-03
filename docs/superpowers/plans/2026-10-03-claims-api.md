@@ -29,29 +29,32 @@
 
 Files: src/types/index.ts, src/models/{Claim,User,Item}.ts, src/models/json.ts; tests/claimModel.test.ts.
 Produces: Claim, User, Item models with sanitized JSON; ObjectId database types and string request IDs.
-- [ ] Update model tests for status defaults, proof limits, missing IDs, and JSON serialization; run and observe failures.
-- [ ] Implement models and request/document types. User hashes modified passwords before save.
-- [ ] Run model tests and typecheck; commit the models.
+- [x] Update model tests for status defaults, proof limits, missing IDs, and JSON serialization; run and observe failures.
+- [x] Implement models and request/document types. User hashes modified passwords before save.
+- [x] Run model tests and typecheck; commit the models.
 
 ### Task 2: Configuration, authentication, and HTTP API
 
 Files: src/config/{env,db}.ts, src/app.ts, src/server.ts, src/middleware/{auth,errors,validation}.ts, src/routes/{auth,claims,items}.ts; tests/{api,config}.test.ts.
 Consumes: Task 1 models. Produces: createApp(config), readConfig(env), connectDatabase(uri), authenticated REST routes.
-- [ ] Add integration/config tests: real registration/login, hidden hash, seven endpoints, input failures, cross-user access, spoofed fields, invalid JWTs, and item existence. Run and observe failures.
-- [ ] Implement runtime validators, JWT guard, configuration, routes, JSON errors, health, startup, and shutdown.
-- [ ] Run the whole test suite, typecheck, and build; commit.
+- [x] Add integration/config tests: real registration/login, hidden hash, seven endpoints, input failures, cross-user access, spoofed fields, invalid JWTs, and item existence. Run and observe failures.
+- [x] Implement runtime validators, JWT guard, configuration, routes, JSON errors, health, startup, and shutdown.
+- [x] Run the whole test suite, typecheck, and build; commit.
 
 ### Task 3: Sample data, submission artifacts, and teaching
 
 Files: src/scripts/seed.ts, postman/*.json, README.md, docs/learning-guide.md, Dockerfile, .dockerignore, AGENTS.md.
 Consumes: Models and config. Produces: idempotent sample catalogue, runnable API collection, learning guide, deployment-ready container.
-- [ ] Test seed idempotence and Postman workflow; implement the seed command.
-- [ ] Document local usage, endpoints, testing, configuration, and the exact request path through code. Update contributor guidance.
-- [ ] Verify tests/build, connect the configured Atlas database, seed explicitly, and check live health/startup.
-- [ ] Commit and obtain a fresh review. Fix correctness findings with regression tests.
-- [ ] Complete GitHub/hosting steps supported by account access; report any specific remaining setup.
+- [x] Test seed idempotence and Postman workflow; implement the seed command.
+- [x] Document local usage, endpoints, testing, configuration, and the exact request path through code. Update contributor guidance.
+- [x] Verify tests/build, connect the configured Atlas database, seed explicitly, and check live health/startup.
+- [x] Commit and obtain a fresh review. Fix correctness findings with regression tests.
+- [ ] Publish and merge the reviewed GitHub PR. Deployment files only, as requested.
 
 ## Progress
 
 - Baseline committed as 81791c1; working on gt4-part1.
 - Atlas connection works outside the network sandbox. The local JWT secret will be replaced with a generated secret if it is too short.
+
+- Final review approved after gating startup on User.init(); 15 tests, typecheck, and build pass.
+- Live Atlas Postman run passed 17 requests and 25 assertions. Docker is not installed locally, so the container build is unverified.
