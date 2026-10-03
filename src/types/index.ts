@@ -42,5 +42,12 @@ export type ClaimDoc = Omit<Claim, "id" | "claimantId" | "itemId"> & {
 // Ownership, status and date come from the server, not the request body.
 export type NewClaimBody = Pick<Claim, "itemId" | "proofDescription">;
 export type UpdateClaimBody = Partial<NewClaimBody>;
-export interface RegisterBody { name: string; email: string; password: string }
-export interface LoginBody { email: string; password: string }
+export interface RegisterBody {
+  name: string;
+  email: string;
+  password: string;
+}
+export interface LoginBody {
+  email: string;
+  password: string;
+}
