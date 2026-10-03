@@ -1,39 +1,46 @@
 import type { Types } from "mongoose";
 
+// API IDs are strings; MongoDB stores references as ObjectId objects.
+export type ID = string;
+export type ClaimStatus = "pending" | "approved" | "rejected";
+
 export interface User {
-  id: number | string;
+  id: ID;
   name: string;
   email: string;
-  role: "student" | "security_admin"; // only these values
+  role: "student" | "security_admin";
   isActive: boolean;
 }
-// An Item is a lost/found post reported by a user.
+
 export interface Item {
-  id: ID; // number for lost/found reports, string for reused codes (e.g. a course code standing in as an item id)
+  id: ID;
   title: string;
   description: string;
   status: "lost" | "found";
   location: string;
-  reportedById: number | string;
+  reportedById: ID;
 }
-// A Claim is filed when a user claims an item; a security admin verifies it.
+
 export interface Claim {
   id: ID;
-  itemId: number;
-  claimantId: number | string;
+  itemId: ID;
+  claimantId: ID;
   claimedAt: Date;
-  verified?: boolean; // ? means this field is optional -- set once an admin verifies
+  proofDescription: string;
+  status: ClaimStatus;
 }
 
-export type ID = number | string;
-
-export type UserDoc = Omit<User, "id"> & {
-  password: string;
+export type UserDoc = Omit<User, "id"> & { password: string };
+export type ItemDoc = Omit<Item, "id" | "reportedById"> & {
+  reportedById: Types.ObjectId;
 };
-
 export type ClaimDoc = Omit<Claim, "id" | "claimantId" | "itemId"> & {
   itemId: Types.ObjectId;
   claimantId: Types.ObjectId;
 };
 
-export type NewCLaimBody = Pick<Claim, "itemId">
+// Ownership, status and date come from the server, not the request body.
+export type NewClaimBody = Pick<Claim, "itemId" | "proofDescription">;
+export type UpdateClaimBody = Partial<NewClaimBody>;
+export interface RegisterBody { name: string; email: string; password: string }
+export interface LoginBody { email: string; password: string }
