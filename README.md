@@ -1,6 +1,12 @@
 # Campus Lost & Found Backend
 
-Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a public read-only catalogue. GT4 Part 2 adds Vercel deployment support and connects the sibling frontend to this API.
+Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a public read-only catalogue.
+
+## Live application
+
+- Frontend: [https://itelect4-project-mu.vercel.app](https://itelect4-project-mu.vercel.app)
+- Backend API: [https://itelect4-backend-virid.vercel.app](https://itelect4-backend-virid.vercel.app)
+- API checks: [Health](https://itelect4-backend-virid.vercel.app/api/health) · [Items](https://itelect4-backend-virid.vercel.app/api/items)
 
 ## Run locally
 
@@ -45,8 +51,6 @@ POST takes `itemId` (a 24-character ObjectId string from the item catalogue) and
 
 All five claim routes require authentication and scope their operations to the token's user. Another user's claim and a missing claim both return 404. Input errors return 400, missing/invalid authentication 401, disallowed browser origins 403, duplicate registration 409, and oversized bodies 413. Unexpected failures return a generic JSON 500.
 
-The backend uses string API IDs, proofDescription, and status rather than the frontend demo's numeric item IDs and verified flag. The sibling frontend now uses real registration/login, public item reads, and authenticated claim creation.
-
 ## Verify and learn
 
 Format all supported project files with `npm run format`. Check formatting without changing files with `npm run format:check`. Prettier uses two-space indentation, double quotes, and semicolons; generated files and environment files are excluded.
@@ -65,21 +69,3 @@ Tests use a temporary MongoDB process, never Atlas. The first test run downloads
 Import `postman/GT4-Part1.postman_collection.json` and optionally `postman/Local.postman_environment.json` into Postman. Seed items and start the API, then run all 17 requests in order. The collection saves tokens and IDs automatically, checks ownership/validation, and deletes its test claim. Each run registers two uniquely named demo accounts. Use a disposable database for repeated collection runs if you do not want those accounts in your app database. Token values are blank in the committed collection.
 
 Read [the Session 9 study guide](docs/session9-codebase-study.md) beside your source code. It traces registration, login, and a claim request through this app and explains the lesson concepts using your actual files.
-
-## Deployment and submission
-
-For a Node hosting service, use Node 24, build with `npm ci && npm run build`, and start with `npm start`. Set the environment variables above on the host and use `/api/health` as its health check. Seed the target database explicitly with `node dist/scripts/seed.js` after building. The HTTP server binds to `0.0.0.0` and reads the host's `PORT`.
-
-### Vercel
-
-Vercel can detect the default Express export in `src/app.ts`; `src/server.ts` remains the local HTTP listener. No custom routing configuration is needed. See [Express on Vercel](https://vercel.com/docs/frameworks/backend/express).
-
-1. Import this GitHub repository as a backend project and use Node.js 24.
-2. Set `MONGODB_URI`, `JWT_SECRET`, and `CORS_ORIGIN` in Vercel's Production and Preview environments. Keep these values out of Git. Initially, `CORS_ORIGIN` can be `http://localhost:5173` while the frontend deployment is pending.
-3. Configure Atlas network access for the deployment. The course handout uses `0.0.0.0/0` because the hosting addresses vary; this permits connection attempts from any IP, so database credentials must remain private.
-4. Deploy and check `https://<backend-domain>/api/health` returns `{ "ok": true, "db": true }`. Seed the target database once if the item catalogue is empty.
-5. After deploying the frontend, set this backend's `CORS_ORIGIN` to the exact frontend origin, with no trailing slash. Save and redeploy. A comma-separated list can include the local frontend too.
-
-No live Vercel deployment has been verified yet. The classroom baseline does not yet include authentication rate limiting or account recovery, so add those before wider public use.
-
-Submit GT4 Part 2 on `gt4-part2` through a pull request in each repository and merge both. Commit `.env.example`, never `.env`. After both integrations and live checks pass and both PRs are merged, tag `gt4` on both repositories and submit both repository links and both live URLs, as required by the Session 10 handout.
