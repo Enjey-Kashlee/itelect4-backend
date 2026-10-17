@@ -28,18 +28,18 @@ Check `GET http://localhost:4000/api/health` for `{ "ok": true, "db": true }`. S
 
 Register with `{ "name": "Student", "email": "student@example.com", "password": "LearnClaims123!" }`; log in with email and password. Send the returned token as `Authorization: Bearer <token>` on protected requests.
 
-| Method | Path                 | Successful result                          |
-| ------ | -------------------- | ------------------------------------------ |
-| GET    | `/api/health`        | 200, database health                       |
-| POST   | `/api/auth/register` | 201, user without password                 |
-| POST   | `/api/auth/login`    | 200, `{ token, user }`                     |
-| GET    | `/api/items`         | 200, shared item catalogue; token required |
-| GET    | `/api/items/:id`     | 200, item; token required                  |
-| GET    | `/api/claims`        | 200, only your claims, newest first        |
-| GET    | `/api/claims/:id`    | 200, your claim                            |
-| POST   | `/api/claims`        | 201, new claim                             |
-| PATCH  | `/api/claims/:id`    | 200, updated claim                         |
-| DELETE | `/api/claims/:id`    | 204, empty body                            |
+| Method | Path                 | Successful result                   |
+| ------ | -------------------- | ----------------------------------- |
+| GET    | `/api/health`        | 200, database health                |
+| POST   | `/api/auth/register` | 201, user without password          |
+| POST   | `/api/auth/login`    | 200, `{ token, user }`              |
+| GET    | `/api/items`         | 200, public shared item catalogue   |
+| GET    | `/api/items/:id`     | 200, public item                    |
+| GET    | `/api/claims`        | 200, only your claims, newest first |
+| GET    | `/api/claims/:id`    | 200, your claim                     |
+| POST   | `/api/claims`        | 201, new claim                      |
+| PATCH  | `/api/claims/:id`    | 200, updated claim                  |
+| DELETE | `/api/claims/:id`    | 204, empty body                     |
 
 POST takes `itemId` (a 24-character ObjectId string from the item catalogue) and `proofDescription` (10–1000 characters after trimming). PATCH accepts either or both of those fields. The server supplies claimantId, claimedAt, and initial status `pending`. Status is an enum: pending/approved/rejected. Students cannot set status, roles, dates, or ownership. Administrator review endpoints belong to a later extension.
 

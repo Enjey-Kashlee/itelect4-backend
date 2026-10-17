@@ -28,7 +28,7 @@ export function createApp(
   });
   app.use("/api/auth", createAuthRouter(config.jwtSecret));
   app.use("/api/claims", createClaimsRouter(config.jwtSecret));
-  app.use("/api/items", createItemsRouter(config.jwtSecret));
+  app.use("/api/items", createItemsRouter());
   app.use((_req, res) => {
     res.status(404).json({ message: "No route with that path and method" });
   });

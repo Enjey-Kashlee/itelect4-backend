@@ -388,14 +388,27 @@ test("claim requests enforce existing items, valid IDs, and proof limits", async
   );
 });
 
-test("the authenticated item catalogue supplies IDs for claims", async () => {
-  const items = await request("GET", "/api/items");
+test("the public item catalogue supplies IDs for claims without authentication", async () => {
+  const items = await request("GET", "/api/items", undefined, null);
   assert.equal(items.status, 200);
   assert.ok(items.body.some((item: { id: string }) => item.id === itemId));
-  assert.equal((await request("GET", `/api/items/${itemId}`)).status, 200);
+  const item = await request("GET", `/api/items/${itemId}`, undefined, null);
+  assert.equal(item.status, 200);
+  assert.equal(item.body.id, itemId);
   assert.equal(
-    (await request("GET", "/api/items", undefined, null)).status,
-    401,
+    (await request("GET", "/api/items/hello", undefined, null)).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request(
+        "GET",
+        `/api/items/${new Types.ObjectId()}`,
+        undefined,
+        null,
+      )
+    ).status,
+    404,
   );
 });
 

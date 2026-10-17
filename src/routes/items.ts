@@ -1,12 +1,10 @@
 import { Router, type Request } from "express";
 import { Item } from "../models/Item";
-import { requireAuth } from "../middleware/auth";
 import { HttpError } from "../middleware/errors";
 import { objectId } from "../middleware/validation";
 
-export function createItemsRouter(jwtSecret: string): Router {
+export function createItemsRouter(): Router {
   const router = Router();
-  router.use(requireAuth(jwtSecret));
   router.get("/", async (_req, res) => {
     res.json(await Item.find().sort({ title: 1 }));
   });
