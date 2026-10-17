@@ -12,12 +12,12 @@ Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real r
 
 Use Node.js 24. Install dependencies with `npm ci`. Copy `.env.example` to `.env` if you do not already have one, then fill in:
 
-| Variable      | Meaning                                                                        |
-| ------------- | ------------------------------------------------------------------------------ |
-| `MONGODB_URI` | Atlas connection string including your database name                           |
-| `JWT_SECRET`  | Random secret of at least 32 characters                                        |
-| `PORT`        | Server port; defaults to 4000                                                  |
-| `CORS_ORIGIN` | Allowed frontend origins, comma separated; defaults to `http://localhost:5173` |
+| Variable      | Meaning                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------- |
+| `MONGODB_URI` | Atlas connection string including your database name                                    |
+| `JWT_SECRET`  | Random secret of at least 32 characters                                                 |
+| `PORT`        | Server port; defaults to 4000                                                           |
+| `CORS_ORIGIN` | Required allowed frontend origins, comma separated; use `http://localhost:5173` locally |
 
 Generate a secret locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Atlas needs a database user and network access for the machine running the API. Keep secrets in `.env` locally and your host's environment settings when deploying.
 
