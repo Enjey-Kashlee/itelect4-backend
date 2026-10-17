@@ -1,6 +1,6 @@
 # Campus Lost & Found Backend
 
-Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a public read-only catalogue. GT4 Part 2 adds Vercel deployment support; frontend integration is the next stage.
+Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a public read-only catalogue. GT4 Part 2 adds Vercel deployment support and connects the sibling frontend to this API.
 
 ## Run locally
 
@@ -45,7 +45,7 @@ POST takes `itemId` (a 24-character ObjectId string from the item catalogue) and
 
 All five claim routes require authentication and scope their operations to the token's user. Another user's claim and a missing claim both return 404. Input errors return 400, missing/invalid authentication 401, disallowed browser origins 403, duplicate registration 409, and oversized bodies 413. Unexpected failures return a generic JSON 500.
 
-The backend uses string API IDs, proofDescription, and status rather than the frontend demo's numeric item IDs and verified flag. The sibling frontend still needs its API integration.
+The backend uses string API IDs, proofDescription, and status rather than the frontend demo's numeric item IDs and verified flag. The sibling frontend now uses real registration/login, public item reads, and authenticated claim creation.
 
 ## Verify and learn
 
