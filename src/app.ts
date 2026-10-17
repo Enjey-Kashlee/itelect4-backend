@@ -1,14 +1,16 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import type { AppConfig } from "./config/env";
+import { readConfig, type AppConfig } from "./config/env";
+import { connectDatabase } from "./config/db";
 import { createAuthRouter } from "./routes/auth";
 import { createClaimsRouter } from "./routes/claims";
 import { createItemsRouter } from "./routes/items";
 import { handleError, HttpError } from "./middleware/errors";
 
 export function createApp(
-  config: Pick<AppConfig, "jwtSecret" | "corsOrigins">,
+  config: Pick<AppConfig, "mongoUri" | "jwtSecret" | "corsOrigins">,
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -22,6 +24,10 @@ export function createApp(
     }),
   );
   app.use(express.json({ limit: "32kb" }));
+  app.use(async (_req, _res, next) => {
+    await connectDatabase(config.mongoUri);
+    next();
+  });
   app.get("/api/health", (_req, res) => {
     const connected = mongoose.connection.readyState === 1;
     res.status(connected ? 200 : 503).json({ ok: connected, db: connected });
@@ -35,3 +41,5 @@ export function createApp(
   app.use(handleError);
   return app;
 }
+
+export default createApp(readConfig(process.env));
