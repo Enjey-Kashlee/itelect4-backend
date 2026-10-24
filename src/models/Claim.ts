@@ -13,7 +13,10 @@ const claimSchema = new Schema<ClaimDoc>({
     ref: "User",
     required: true,
   },
-  claimedAt: { type: Date, default: Date.now },
+  claimedAt: {
+    type: Date,
+    default: Date.now,
+  },
   proofDescription: {
     type: String,
     trim: true,
