@@ -6,7 +6,7 @@ http
     res.setHeader("Content-Type", "application/json");
     if (
       req.method !== "POST" ||
-      req.url !== "/v1beta/models/gemini-flash-latest:generateContent"
+      req.url !== "/v1beta/models/gemini-flash-lite-latest:generateContent"
     ) {
       res.writeHead(501);
       return res.end(
