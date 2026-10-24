@@ -1,13 +1,14 @@
 import "dotenv/config";
 import mongoose from "mongoose";
-import { createApp } from "./app";
 import { connectDatabase } from "./config/db";
 import { readConfig } from "./config/env";
 
 async function start(): Promise<void> {
   const config = readConfig(process.env);
   await connectDatabase(config.mongoUri);
-  const server = createApp(config).listen(config.port, "0.0.0.0", () => {
+  // Load the hosting entry only after configuration passes the startup error handler.
+  const { default: app } = require("./app") as typeof import("./app");
+  const server = app.listen(config.port, "0.0.0.0", () => {
     console.log(`MongoDB connected; API listening on port ${config.port}`);
   });
   server.on("error", () => {

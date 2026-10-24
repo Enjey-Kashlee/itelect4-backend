@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This Express, MongoDB, and TypeScript backend serves Campus Lost & Found. `src/types/` defines API and storage types; `src/models/` defines User, Item, and Claim schemas. `src/routes/` handles authentication, claims, and the item catalogue. `src/middleware/` holds JWT authentication, runtime input checks, and JSON errors. `src/app.ts` assembles Express; `src/server.ts` connects MongoDB and starts HTTP. `src/data/` and `src/scripts/` seed sample items. `tests/` holds model and HTTP tests; `postman/` holds runnable requests; `docs/learning-guide.md` teaches the code. TypeScript emits to ignored `dist/`.
+This Express, MongoDB, and TypeScript backend serves Campus Lost & Found. `src/types/` defines API and storage types; `src/models/` defines User, Item, and Claim schemas. `src/routes/` handles authentication, claims, and the item catalogue. `src/middleware/` holds JWT authentication, runtime input checks, and JSON errors. `src/app.ts` assembles Express; `src/app.ts` exports the hosting app and waits for MongoDB in request middleware; `src/server.ts` connects MongoDB and starts local HTTP. `src/data/` and `src/scripts/` seed sample items. `tests/` holds model and HTTP tests; `postman/` holds runnable requests; `docs/learning-guide.md` teaches the code. TypeScript emits to ignored `dist/`.
 
 ## Build, Test, and Development Commands
 
@@ -26,7 +26,7 @@ Run `npm test`, `npm run typecheck`, and `npm run build`. Tests use Node's runne
 
 ## Domain Notes
 
-Course maps to Item; Submission maps to Claim. Items identify their reporter. Claims reference an existing item and authenticated claimant. New claims start pending; status replaces the backend verified flag. Proof requires 10–1000 characters. Every claim operation filters by claimantId from the token. Students cannot set ownership, dates, roles, or status. Item reads are shared. Administrator review and frontend integration are later work; preserve that boundary.
+Course maps to Item; Submission maps to Claim. Items identify their reporter. Claims reference an existing item and authenticated claimant. New claims start pending; status replaces the backend verified flag. Proof requires 10–1000 characters. Every claim operation filters by claimantId from the token. Students cannot set ownership, dates, roles, or status. Item reads are shared. Item reads are public. Frontend integration is GT4 Part 2; administrator review remains later work.
 
 ## Security & Configuration
 
@@ -34,4 +34,4 @@ Configure MONGODB_URI, JWT_SECRET, PORT, and CORS_ORIGIN using `.env.example`. N
 
 ## Commit & Pull Request Guidelines
 
-Use concise imperative subjects with prefixes such as feat: or docs:. Work for this task on gt4-part1. PRs should explain behavior, reference the course task, list checks, and mention configuration/API changes. Submit through a merged PR; tag GT4 after Session 11.
+Use concise imperative subjects with prefixes such as feat: or docs:. Work for GT4 Part 2 on gt4-part2. Ask the user before every push, including tags. PRs should explain behavior, reference the course task, list checks, and mention configuration/API changes. Submit both repositories through merged PRs; tag gt4 on both only after integration and live deployment checks pass, following the Session 10 handout.

@@ -47,16 +47,16 @@ async function request(
 }
 
 before(async () => {
-  const { createApp } = await import("../src/app");
   database = await MongoMemoryServer.create({
     binary: { downloadDir: join(tmpdir(), "itelect4-mongodb-binaries") },
   });
   await mongoose.connect(database.getUri(), { dbName: "claims_api_test" });
   await User.init();
-  server = createApp({
-    jwtSecret,
-    corsOrigins: ["http://localhost:5173"],
-  }).listen(0, "127.0.0.1");
+  process.env.MONGODB_URI = database.getUri("claims_api_test");
+  process.env.JWT_SECRET = jwtSecret;
+  process.env.CORS_ORIGIN = "http://localhost:5173";
+  const { default: app } = await import("../src/app");
+  server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server!.once("listening", resolve));
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   registration = await request(
@@ -388,14 +388,27 @@ test("claim requests enforce existing items, valid IDs, and proof limits", async
   );
 });
 
-test("the authenticated item catalogue supplies IDs for claims", async () => {
-  const items = await request("GET", "/api/items");
+test("the public item catalogue supplies IDs for claims without authentication", async () => {
+  const items = await request("GET", "/api/items", undefined, null);
   assert.equal(items.status, 200);
   assert.ok(items.body.some((item: { id: string }) => item.id === itemId));
-  assert.equal((await request("GET", `/api/items/${itemId}`)).status, 200);
+  const item = await request("GET", `/api/items/${itemId}`, undefined, null);
+  assert.equal(item.status, 200);
+  assert.equal(item.body.id, itemId);
   assert.equal(
-    (await request("GET", "/api/items", undefined, null)).status,
-    401,
+    (await request("GET", "/api/items/hello", undefined, null)).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request(
+        "GET",
+        `/api/items/${new Types.ObjectId()}`,
+        undefined,
+        null,
+      )
+    ).status,
+    404,
   );
 });
 
@@ -448,4 +461,45 @@ test("seeding twice inserts three sample items once and preserves existing data"
   }).select("+password");
   assert.ok(reporter?.password.startsWith("$2"));
   assert.equal(reporter!.role, "student");
+});
+
+test("warm requests reuse MongoDB without reconnecting", async (t) => {
+  const connect = t.mock.method(mongoose, "connect", async () => {
+    throw new Error("Unexpected reconnect");
+  });
+  assert.equal(
+    (await request("GET", "/api/health", undefined, null)).status,
+    200,
+  );
+  assert.equal(connect.mock.callCount(), 0);
+});
+
+test("a cold request connects MongoDB before reporting readiness", async () => {
+  await mongoose.disconnect();
+  const result = await request("GET", "/api/health", undefined, null);
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body, { ok: true, db: true });
+  assert.ok(await User.findById(aliceId));
+});
+
+test("database failures return JSON errors and preflight does not need a connection", async (t) => {
+  await mongoose.disconnect();
+  const connect = t.mock.method(mongoose, "connect", async () => {
+    throw new Error("Database unavailable");
+  });
+  const preflight = await fetch(baseUrl + "/api/claims", {
+    method: "OPTIONS",
+    headers: {
+      Origin: "http://localhost:5173",
+      "Access-Control-Request-Method": "POST",
+      "Access-Control-Request-Headers": "authorization,content-type",
+    },
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(connect.mock.callCount(), 0);
+  const result = await request("GET", "/api/health", undefined, null);
+  assert.equal(result.status, 500);
+  assert.deepEqual(result.body, {
+    message: "An unexpected server error occurred",
+  });
 });

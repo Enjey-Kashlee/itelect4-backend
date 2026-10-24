@@ -1,6 +1,6 @@
 # Campus Lost & Found Backend
 
-GT4 Part 1: a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a shared read-only catalogue. Frontend integration is planned for Session 11.
+Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a public read-only catalogue. GT4 Part 2 adds Vercel deployment support and connects the sibling frontend to this API.
 
 ## Run locally
 
@@ -22,30 +22,30 @@ npm run dev
 
 The seed inserts three sample items and one sample reporter with a random password. It preserves existing items and claims when repeated. Register your own account to log in; the sample reporter is not a demo login account.
 
-Check `GET http://localhost:4000/api/health` for `{ "ok": true, "db": true }`. Startup connects MongoDB before accepting requests.
+Check `GET http://localhost:4000/api/health` for `{ "ok": true, "db": true }`. Local startup connects MongoDB before accepting requests. On Vercel, request middleware connects before handling a request. Concurrent requests share the connection attempt, and subsequent requests reuse the open connection. Both paths wait for the unique email index before registration can run.
 
 ## API
 
 Register with `{ "name": "Student", "email": "student@example.com", "password": "LearnClaims123!" }`; log in with email and password. Send the returned token as `Authorization: Bearer <token>` on protected requests.
 
-| Method | Path                 | Successful result                          |
-| ------ | -------------------- | ------------------------------------------ |
-| GET    | `/api/health`        | 200, database health                       |
-| POST   | `/api/auth/register` | 201, user without password                 |
-| POST   | `/api/auth/login`    | 200, `{ token, user }`                     |
-| GET    | `/api/items`         | 200, shared item catalogue; token required |
-| GET    | `/api/items/:id`     | 200, item; token required                  |
-| GET    | `/api/claims`        | 200, only your claims, newest first        |
-| GET    | `/api/claims/:id`    | 200, your claim                            |
-| POST   | `/api/claims`        | 201, new claim                             |
-| PATCH  | `/api/claims/:id`    | 200, updated claim                         |
-| DELETE | `/api/claims/:id`    | 204, empty body                            |
+| Method | Path                 | Successful result                   |
+| ------ | -------------------- | ----------------------------------- |
+| GET    | `/api/health`        | 200, database health                |
+| POST   | `/api/auth/register` | 201, user without password          |
+| POST   | `/api/auth/login`    | 200, `{ token, user }`              |
+| GET    | `/api/items`         | 200, public shared item catalogue   |
+| GET    | `/api/items/:id`     | 200, public item                    |
+| GET    | `/api/claims`        | 200, only your claims, newest first |
+| GET    | `/api/claims/:id`    | 200, your claim                     |
+| POST   | `/api/claims`        | 201, new claim                      |
+| PATCH  | `/api/claims/:id`    | 200, updated claim                  |
+| DELETE | `/api/claims/:id`    | 204, empty body                     |
 
 POST takes `itemId` (a 24-character ObjectId string from the item catalogue) and `proofDescription` (10–1000 characters after trimming). PATCH accepts either or both of those fields. The server supplies claimantId, claimedAt, and initial status `pending`. Status is an enum: pending/approved/rejected. Students cannot set status, roles, dates, or ownership. Administrator review endpoints belong to a later extension.
 
 All five claim routes require authentication and scope their operations to the token's user. Another user's claim and a missing claim both return 404. Input errors return 400, missing/invalid authentication 401, disallowed browser origins 403, duplicate registration 409, and oversized bodies 413. Unexpected failures return a generic JSON 500.
 
-The backend now uses string API IDs, proofDescription, and status rather than the frontend demo's numeric item IDs and verified flag. The sibling frontend remains independent until its API integration is implemented.
+The backend uses string API IDs, proofDescription, and status rather than the frontend demo's numeric item IDs and verified flag. The sibling frontend now uses real registration/login, public item reads, and authenticated claim creation.
 
 ## Verify and learn
 
@@ -70,6 +70,16 @@ Read [the Session 9 study guide](docs/session9-codebase-study.md) beside your so
 
 For a Node hosting service, use Node 24, build with `npm ci && npm run build`, and start with `npm start`. Set the environment variables above on the host and use `/api/health` as its health check. Seed the target database explicitly with `node dist/scripts/seed.js` after building. The HTTP server binds to `0.0.0.0` and reads the host's `PORT`.
 
-Deployment files are prepared; no hosting service has been created. HTTPS is supplied by your hosting service. The classroom baseline does not yet include authentication rate limiting or account recovery, so add those before wider public use.
+### Vercel
 
-Submit this backend's `gt4-part1` branch through a pull request and merge it. Commit `.env.example`, never `.env`. Do not tag GT4 until the end of Session 11.
+Vercel can detect the default Express export in `src/app.ts`; `src/server.ts` remains the local HTTP listener. No custom routing configuration is needed. See [Express on Vercel](https://vercel.com/docs/frameworks/backend/express).
+
+1. Import this GitHub repository as a backend project and use Node.js 24.
+2. Set `MONGODB_URI`, `JWT_SECRET`, and `CORS_ORIGIN` in Vercel's Production and Preview environments. Keep these values out of Git. Initially, `CORS_ORIGIN` can be `http://localhost:5173` while the frontend deployment is pending.
+3. Configure Atlas network access for the deployment. The course handout uses `0.0.0.0/0` because the hosting addresses vary; this permits connection attempts from any IP, so database credentials must remain private.
+4. Deploy and check `https://<backend-domain>/api/health` returns `{ "ok": true, "db": true }`. Seed the target database once if the item catalogue is empty.
+5. After deploying the frontend, set this backend's `CORS_ORIGIN` to the exact frontend origin, with no trailing slash. Save and redeploy. A comma-separated list can include the local frontend too.
+
+No live Vercel deployment has been verified yet. The classroom baseline does not yet include authentication rate limiting or account recovery, so add those before wider public use.
+
+Submit GT4 Part 2 on `gt4-part2` through a pull request in each repository and merge both. Commit `.env.example`, never `.env`. After both integrations and live checks pass and both PRs are merged, tag `gt4` on both repositories and submit both repository links and both live URLs, as required by the Session 10 handout.
