@@ -12,12 +12,13 @@ Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real r
 
 Use Node.js 24. Install dependencies with `npm ci`. Copy `.env.example` to `.env` if you do not already have one, then fill in:
 
-| Variable      | Meaning                                                                                 |
-| ------------- | --------------------------------------------------------------------------------------- |
-| `MONGODB_URI` | Atlas connection string including your database name                                    |
-| `JWT_SECRET`  | Random secret of at least 32 characters                                                 |
-| `PORT`        | Server port; defaults to 4000                                                           |
-| `CORS_ORIGIN` | Required allowed frontend origins, comma separated; use `http://localhost:5173` locally |
+| Variable         | Meaning                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| `MONGODB_URI`    | Atlas connection string including your database name                                    |
+| `JWT_SECRET`     | Random secret of at least 32 characters                                                 |
+| `GEMINI_API_KEY` | Server-only Gemini key for AI reviews; other routes do not require it                   |
+| `PORT`           | Server port; defaults to 4000                                                           |
+| `CORS_ORIGIN`    | Required allowed frontend origins, comma separated; use `http://localhost:5173` locally |
 
 Generate a secret locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Atlas needs a database user and network access for the machine running the API. Keep secrets in `.env` locally and your host's environment settings when deploying.
 
@@ -34,18 +35,19 @@ Check `GET http://localhost:4000/api/health` for `{ "ok": true, "db": true }`. L
 
 Register with `{ "name": "Student", "email": "student@example.com", "password": "LearnClaims123!" }`; log in with email and password. Send the returned token as `Authorization: Bearer <token>` on protected requests.
 
-| Method | Path                 | Successful result                   |
-| ------ | -------------------- | ----------------------------------- |
-| GET    | `/api/health`        | 200, database health                |
-| POST   | `/api/auth/register` | 201, user without password          |
-| POST   | `/api/auth/login`    | 200, `{ token, user }`              |
-| GET    | `/api/items`         | 200, public shared item catalogue   |
-| GET    | `/api/items/:id`     | 200, public item                    |
-| GET    | `/api/claims`        | 200, only your claims, newest first |
-| GET    | `/api/claims/:id`    | 200, your claim                     |
-| POST   | `/api/claims`        | 201, new claim                      |
-| PATCH  | `/api/claims/:id`    | 200, updated claim                  |
-| DELETE | `/api/claims/:id`    | 204, empty body                     |
+| Method | Path                 | Successful result                              |
+| ------ | -------------------- | ---------------------------------------------- |
+| GET    | `/api/health`        | 200, database health                           |
+| POST   | `/api/auth/register` | 201, user without password                     |
+| POST   | `/api/auth/login`    | 200, `{ token, user }`                         |
+| GET    | `/api/items`         | 200, public shared item catalogue              |
+| GET    | `/api/items/:id`     | 200, public item                               |
+| GET    | `/api/claims`        | 200, only your claims, newest first            |
+| GET    | `/api/claims/:id`    | 200, your claim                                |
+| POST   | `/api/claims`        | 201, new claim                                 |
+| PATCH  | `/api/claims/:id`    | 200, updated claim                             |
+| DELETE | `/api/claims/:id`    | 204, empty body                                |
+| POST   | `/api/ai`            | 200, authenticated AI claim preparation review |
 
 POST takes `itemId` (a 24-character ObjectId string from the item catalogue) and `proofDescription` (10–1000 characters after trimming). PATCH accepts either or both of those fields. The server supplies claimantId, claimedAt, and initial status `pending`. Status is an enum: pending/approved/rejected. Students cannot set status, roles, dates, or ownership. Administrator review endpoints belong to a later extension.
 
@@ -69,3 +71,5 @@ Tests use a temporary MongoDB process, never Atlas. The first test run downloads
 Import `postman/GT4-Part1.postman_collection.json` and optionally `postman/Local.postman_environment.json` into Postman. Seed items and start the API, then run all 17 requests in order. The collection saves tokens and IDs automatically, checks ownership/validation, and deletes its test claim. Each run registers two uniquely named demo accounts. Use a disposable database for repeated collection runs if you do not want those accounts in your app database. Token values are blank in the committed collection.
 
 Read [the Session 9 study guide](docs/session9-codebase-study.md) beside your source code. It traces registration, login, and a claim request through this app and explains the lesson concepts using your actual files.
+
+For GT5 setup, the AI contract, simulation tests, and deployment/submission steps, read [AI claim preparation](docs/gt5-ai.md). Run `npm run try-ai` after saving the Gemini key to check one real AI reply. `postman/GT5-AI.postman_collection.json` provides six runnable GT5 requests.
