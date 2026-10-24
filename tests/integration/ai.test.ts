@@ -124,7 +124,7 @@ for (const [fixture, expected] of [
 ] as const) {
   test(
     `provider ${fixture} produces a safe ${expected} response`,
-    { timeout: 30000 },
+    { timeout: 70000 },
     async () => {
       const auth = await newToken(fixture);
       const result = await request(

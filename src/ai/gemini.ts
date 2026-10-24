@@ -15,7 +15,7 @@ function getClient(): GoogleGenAI {
   }
   client ??= new GoogleGenAI({
     apiKey,
-    httpOptions: { timeout: 20000, retryOptions: { attempts: 1 } },
+    httpOptions: { timeout: 60000, retryOptions: { attempts: 1 } },
   });
   return client;
 }

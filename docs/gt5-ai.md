@@ -26,7 +26,7 @@ The backend's Zod schema defines the TypeScript type, Gemini JSON Schema, and ru
 | 500    | Missing backend Gemini key                                                                          |
 | 502    | Provider failure, timeout, safety block, incomplete reply, invalid JSON, or invalid response schema |
 
-Authentication runs before rate limiting. Invalid authenticated attempts count toward the local limit but consume no Gemini quota. The in-memory limiter is a speed bump on Vercel; exact global limits would need a shared store. The provider timeout is 20 seconds and automatic SDK retries are disabled so a single action does not generate repeated provider calls. Existing database/CORS requirements still apply.
+Authentication runs before rate limiting. Invalid authenticated attempts count toward the local limit but consume no Gemini quota. The in-memory limiter is a speed bump on Vercel; exact global limits would need a shared store. The provider timeout is 60 seconds and automatic SDK retries are disabled so a single action does not generate repeated provider calls. Existing database/CORS requirements still apply.
 
 ## Local setup
 
@@ -79,11 +79,11 @@ Existing deployment URLs: [backend](https://itelect4-backend-virid.vercel.app), 
 ## Local verification on October 25, 2026
 
 - Backend: 21 tests pass; typecheck and build pass.
-- Separate AI integration suite: 11 tests pass against the local Postman simulation, including the 20-second timeout.
+- Separate AI integration suite: 11 tests pass against the local Postman simulation, including the 60-second timeout.
 - Frontend: 17 tests pass; production build and TypeScript check pass.
 - Postman GT5 collection: 6 requests, 12 assertions, all pass against the temporary backend and simulated Gemini.
-- Browser: logged-out redirect, registration/login with a disposable account, short-input validation, all four result fields, and quota error verified.
+- Browser: logged-out redirect, registration/login with a disposable account, short-input validation, all four result fields, quota error, dark-mode readability, and logout verified.
 - A mutation of the minimum prompt length was detected by the schema test.
 - `.env` is ignored; tracked files and existing Git history contain no Gemini key prefix matches.
 - Existing issues outside this change: frontend lint fails at `src/hooks/usePrevious.ts` (`react-hooks/refs`); backend audit reports one high-severity `body-parser` advisory, GHSA-27r3-jxmh-p828, already present in the base lockfile.
-- Live Gemini was attempted with the saved key: Google returned 503 UNAVAILABLE due to high model demand. A successful live reply, real answer quality, deployment, and GT5 live URLs remain unverified. Deployment steps are still required. Full responsive/accessibility and console audits were not performed.
+- Live Gemini was attempted with the saved key: Google returned 503 UNAVAILABLE due to high model demand; the next request hit the original 20-second deadline. The deadline was increased to 60 seconds; the final live retry also returned 504. A successful live reply, real answer quality, deployment, and GT5 live URLs remain unverified. Deployment steps are still required. Full responsive/accessibility and console audits were not performed.
