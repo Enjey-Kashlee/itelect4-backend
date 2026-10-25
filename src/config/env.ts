@@ -20,7 +20,7 @@ export function readConfig(env: NodeJS.ProcessEnv): AppConfig {
   ) {
     throw new Error("PORT must be a whole number between 1 and 65535");
   }
-  const corsOrigins = (env.CORS_ORIGIN ?? "http://localhost:5173")
+  const corsOrigins = (env.CORS_ORIGIN ?? "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);

@@ -1,14 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-test("configuration requires a database URI, strong secret, and valid port", async () => {
+test("configuration requires a database URI, strong secret, valid port, and explicit CORS origins", async () => {
   const { readConfig } = await import("../src/config/env");
   const env = {
     MONGODB_URI: "mongodb://127.0.0.1/itelect4",
     JWT_SECRET: "a".repeat(32),
+    CORS_ORIGIN: "http://localhost:5173",
   };
   assert.equal(readConfig(env).port, 4000);
   assert.deepEqual(readConfig(env).corsOrigins, ["http://localhost:5173"]);
+  for (const origin of [undefined, "", " , "]) {
+    assert.throws(
+      () => readConfig({ ...env, CORS_ORIGIN: origin }),
+      /CORS_ORIGIN/,
+    );
+  }
   assert.throws(() => readConfig({ ...env, MONGODB_URI: "" }), /MONGODB_URI/);
   assert.throws(
     () => readConfig({ ...env, MONGODB_URI: "https://example.com" }),
