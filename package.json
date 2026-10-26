@@ -11,7 +11,9 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "test": "node --import tsx --test tests/*.test.ts",
-    "seed:items": "tsx src/scripts/seed.ts"
+    "test:ai": "node --import tsx --test tests/integration/ai.test.ts",
+    "seed:items": "tsx src/scripts/seed.ts",
+    "try-ai": "tsx src/scripts/try-ai.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,12 +23,15 @@
     "node": ">=24"
   },
   "dependencies": {
+    "@google/genai": "^2.31.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.10.2"
+    "mongoose": "^9.10.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

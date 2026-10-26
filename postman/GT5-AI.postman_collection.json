@@ -1,0 +1,266 @@
+{
+  "info": {
+    "name": "Campus Lost & Found \u2014 GT5 AI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run in order against a disposable database. Registers one demo account. The valid review spends one Gemini request on a real backend. Secrets remain on the backend."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "demoPassword",
+      "value": "LearnClaims123!",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Register student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Demo Student\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const suffix = Date.now().toString() + \"-\" + Math.floor(Math.random() * 1000000);",
+              "pm.collectionVariables.set(\"email\", \"student-\" + suffix + \"@example.com\");",
+              "pm.collectionVariables.set(\"otherEmail\", \"other-\" + suffix + \"@example.com\");"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.expect(pm.response.code).to.eql(201));",
+              "pm.test(\"No password in response\", () => pm.expect(pm.response.json()).not.to.have.property(\"password\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Login student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "if (pm.response.code === 200) { const data = pm.response.json(); pm.collectionVariables.set(\"token\", data.token); pm.collectionVariables.set(\"userId\", data.user.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Reject unauthenticated review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/ai",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"My blue bottle has initials underneath.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.expect(pm.response.code).to.eql(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Reject short input",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/ai",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"short\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.expect(pm.response.code).to.eql(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Reject student supplied status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/ai",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"My blue bottle has initials underneath.\",\n  \"status\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.expect(pm.response.code).to.eql(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Review ownership description",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/ai",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"My blue bottle was lost in the library yesterday. It has JK engraved underneath and a dent near the lid. I have a dated photo showing those marks.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.eql(200));",
+              "pm.test(\"All four fields are returned\", () => pm.expect(pm.response.json()).to.have.all.keys(\"summary\", \"strengths\", \"improvements\", \"readiness\"));",
+              "pm.test(\"Readiness is advisory\", () => pm.expect([\"ready\", \"almost\", \"not-yet\"]).to.include(pm.response.json().readiness));",
+              "pm.test(\"Summary is nonempty\", () => pm.expect(pm.response.json().summary).to.be.a(\"string\").and.not.empty);",
+              "pm.test(\"Useful details and improvements are arrays\", () => { for (const key of [\"strengths\", \"improvements\"]) { const values = pm.response.json()[key]; pm.expect(values).to.be.an(\"array\"); pm.expect(values.length).to.be.within(1, 3); values.forEach(value => pm.expect(value).to.be.a(\"string\").and.not.empty); } });",
+              "pm.test(\"Private result is not cached\", () => pm.expect(pm.response.headers.get(\"Cache-Control\")).to.eql(\"no-store\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

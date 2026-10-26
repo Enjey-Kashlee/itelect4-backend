@@ -7,6 +7,7 @@ import { connectDatabase } from "./config/db";
 import { createAuthRouter } from "./routes/auth";
 import { createClaimsRouter } from "./routes/claims";
 import { createItemsRouter } from "./routes/items";
+import { createAiRouter } from "./routes/ai";
 import { handleError, HttpError } from "./middleware/errors";
 
 export function createApp(
@@ -35,6 +36,7 @@ export function createApp(
   app.use("/api/auth", createAuthRouter(config.jwtSecret));
   app.use("/api/claims", createClaimsRouter(config.jwtSecret));
   app.use("/api/items", createItemsRouter());
+  app.use("/api/ai", createAiRouter(config.jwtSecret));
   app.use((_req, res) => {
     res.status(404).json({ message: "No route with that path and method" });
   });
