@@ -7,13 +7,16 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "npm run test:unit && npm run test:gt6",
     "test:ai": "node --import tsx --test tests/integration/ai.test.ts",
     "seed:items": "tsx src/scripts/seed.ts",
-    "try-ai": "tsx src/scripts/try-ai.ts"
+    "try-ai": "tsx src/scripts/try-ai.ts",
+    "test:unit": "node --import tsx --test tests/*.test.ts",
+    "test:gt6": "vitest run --reporter=verbose",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -38,9 +41,12 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.3",
+    "@types/supertest": "^7.2.1",
     "mongodb-memory-server": "^11.3.0",
     "prettier": "3.9.10",
+    "supertest": "^7.3.1",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
   }
 }

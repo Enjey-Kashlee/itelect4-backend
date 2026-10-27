@@ -11,7 +11,8 @@ This Express, MongoDB, and TypeScript backend serves Campus Lost & Found. `src/t
 - `npm run build`: compile TypeScript into `dist/`.
 - `npm run dev`: watch and run the TypeScript server.
 - `npm start`: run compiled `dist/server.js` after building.
-- `npm test`: run model, configuration, and HTTP tests against temporary MongoDB.
+- `npm test`: run the existing Node suite against temporary MongoDB, then isolated GT6 Vitest/Supertest tests.
+- `npm run test:gt6`: run isolated GT6 route tests; requires a local or environment `JWT_SECRET`.
 - `npm run seed:items`: insert sample items without overwriting existing records.
 
 There is no lint script. Use Node.js 24.
@@ -22,7 +23,7 @@ Use two-space indentation, double quotes, semicolons, and type-only imports. Kee
 
 ## Testing Guidelines
 
-Run `npm test`, `npm run typecheck`, and `npm run build`. Tests use Node's runner and mongodb-memory-server; the first run downloads a test binary. Never use Atlas for automated tests. Cover validation, authentication, ownership, and update rules. No coverage threshold is configured.
+Run `npm test`, `npm run typecheck`, and `npm run build`. Existing tests use Node's runner and mongodb-memory-server; the first run downloads a test binary. GT6 tests in `tests/gt6/` use Vitest/Supertest and mock database access and Gemini. Never use Atlas for automated tests. Cover validation, authentication, ownership, and update rules. No coverage threshold is configured.
 
 ## Domain Notes
 

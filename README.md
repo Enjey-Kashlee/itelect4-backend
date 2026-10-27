@@ -1,5 +1,7 @@
 # Campus Lost & Found Backend
 
+[![CI](https://github.com/Enjey-Kashlee/itelect4-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Enjey-Kashlee/itelect4-backend/actions/workflows/ci.yml)
+
 Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a public read-only catalogue.
 
 ## Live application
@@ -66,7 +68,24 @@ npm run build
 npm start
 ```
 
-Tests use a temporary MongoDB process, never Atlas. The first test run downloads a MongoDB binary to the operating system's temporary directory, so it needs internet access. `dev` runs TypeScript with watching; `typecheck` checks types; `build` emits JavaScript into `dist/`; `start` runs that JavaScript.
+`npm test` runs the existing Node regression suite (`npm run test:unit`), then the GT6 Vitest/Supertest suite (`npm run test:gt6`). `npm run test:watch` watches the GT6 suite. The existing suite uses a temporary MongoDB process, never Atlas; its first run downloads a MongoDB binary to the operating system's temporary directory. The GT6 suite mocks the database connection, active-user lookup, and Gemini boundary while exercising the real Express app and JWT middleware. It checks missing/invalid tokens, a valid token reaching prompt validation, and inactive accounts. It never contacts Atlas or Gemini.
+
+GT6 tests need a `JWT_SECRET` of at least 32 characters, from the local ignored `.env` or the environment. Other configuration is supplied with dummy values in `vitest.config.mts`. On GitHub, add a separate random test-only `JWT_SECRET` under this repository's **Settings → Secrets and variables → Actions**. It need not match Vercel or local development. Both suites, type checks, and the build run on every push and pull request. The optional GT5 `test:ai` simulation remains separate and needs its simulation service as described in `docs/gt5-ai.md`.
+
+`dev` runs TypeScript with watching; `typecheck` checks application and GT6 test types; `build` emits application JavaScript into `dist/`; `start` runs that JavaScript.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  browser["React + Vite on Vercel"] -->|"HTTP + Bearer token for private routes"| api["Express API on Vercel"]
+  api -->|Mongoose| db[(MongoDB Atlas)]
+  api -->|Server-only API key| gemini[Gemini API]
+```
+
+## AI-use disclosure
+
+OpenAI Codex assisted with implementation, test design, CI configuration, documentation, and debugging. The author is responsible for reviewing, understanding, and explaining the submitted code.
 
 Import `postman/GT4-Part1.postman_collection.json` and optionally `postman/Local.postman_environment.json` into Postman. Seed items and start the API, then run all 17 requests in order. The collection saves tokens and IDs automatically, checks ownership/validation, and deletes its test claim. Each run registers two uniquely named demo accounts. Use a disposable database for repeated collection runs if you do not want those accounts in your app database. Token values are blank in the committed collection.
 

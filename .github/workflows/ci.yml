@@ -1,7 +1,6 @@
-name: Backend checks
+name: CI
 on:
   push:
-    branches: [main, gt4-part1]
   pull_request:
 permissions:
   contents: read
@@ -15,6 +14,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm test
       - run: npm run typecheck
+      - run: npm test
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
       - run: npm run build
