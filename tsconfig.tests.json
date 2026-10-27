@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["tests/gt6/**/*.ts", "vitest.config.mts"]
+}
