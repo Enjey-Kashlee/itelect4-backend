@@ -12,8 +12,6 @@
     "format:check": "prettier . --check",
     "test": "npm run test:unit && npm run test:gt6",
     "test:ai": "node --import tsx --test tests/integration/ai.test.ts",
-    "seed:items": "tsx src/scripts/seed.ts",
-    "try-ai": "tsx src/scripts/try-ai.ts",
     "test:unit": "node --import tsx --test tests/*.test.ts",
     "test:gt6": "vitest run --reporter=verbose",
     "test:watch": "vitest"
