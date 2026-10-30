@@ -31,7 +31,12 @@ export const handleError: ErrorRequestHandler = (
     "code" in error &&
     error.code === 11000
   ) {
-    res.status(409).json({ message: "That email is already registered" });
+    const duplicate = error as { keyPattern?: Record<string, unknown> };
+    res.status(409).json({
+      message: duplicate.keyPattern?.role
+        ? "An administrator account already exists"
+        : "That email is already registered",
+    });
   } else if (
     typeof error === "object" &&
     error !== null &&

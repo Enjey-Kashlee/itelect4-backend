@@ -74,7 +74,7 @@ describe("POST /api/ai authentication", () => {
         "Describe your item and ownership evidence in at least 20 characters.",
     });
     expect(User.findById).toHaveBeenCalledWith(userId);
-    expect(select).toHaveBeenCalledWith("isActive");
+    expect(select).toHaveBeenCalledWith("isActive role");
   });
 
   it("returns 401 when a signed token belongs to an inactive account", async () => {

@@ -30,8 +30,23 @@ const claimSchema = new Schema<ClaimDoc>({
     default: "pending",
     required: true,
   },
+  reviewedById: { type: Schema.Types.ObjectId, ref: "User" },
+  reviewedAt: { type: Date },
 });
 
-claimSchema.set("toJSON", { transform: publicJson });
+claimSchema.virtual("item", {
+  ref: "Item",
+  localField: "itemId",
+  foreignField: "_id",
+  justOne: true,
+});
+claimSchema.virtual("claimant", {
+  ref: "User",
+  localField: "claimantId",
+  foreignField: "_id",
+  justOne: true,
+});
+
+claimSchema.set("toJSON", { virtuals: true, transform: publicJson });
 
 export const Claim = model<ClaimDoc>("Claim", claimSchema);

@@ -2,11 +2,13 @@ import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../models/User";
 import { HttpError } from "./errors";
+import type { User as UserType } from "../types/index";
 
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      userRole?: UserType["role"];
     }
   }
 }
@@ -31,9 +33,23 @@ export function requireAuth(secret: string): RequestHandler {
     } catch {
       throw new HttpError(401, "Token is invalid or has expired");
     }
-    const user = await User.findById(userId).select("isActive");
+    const user = await User.findById(userId).select("isActive role");
     if (!user?.isActive) throw new HttpError(401, "Account is unavailable");
     req.userId = userId;
+    req.userRole = user.role;
+    next();
+  };
+}
+
+export function requireRole(role: UserType["role"]): RequestHandler {
+  return (req, _res, next) => {
+    if (req.userRole !== role)
+      throw new HttpError(
+        403,
+        role === "security_admin"
+          ? "Administrator access is required"
+          : "A student account is required",
+      );
     next();
   };
 }

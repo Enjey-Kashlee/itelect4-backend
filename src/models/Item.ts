@@ -34,6 +34,13 @@ const itemSchema = new Schema<ItemDoc>({
   },
 });
 
-itemSchema.set("toJSON", { transform: publicJson });
+itemSchema.virtual("reportedBy", {
+  ref: "User",
+  localField: "reportedById",
+  foreignField: "_id",
+  justOne: true,
+});
+
+itemSchema.set("toJSON", { virtuals: true, transform: publicJson });
 
 export const Item = model<ItemDoc>("Item", itemSchema);

@@ -37,6 +37,15 @@ const userSchema = new Schema<UserDoc>({
   },
 });
 
+userSchema.index(
+  { role: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { role: "security_admin" },
+    name: "single_security_admin",
+  },
+);
+
 userSchema.pre("save", async function () {
   if (this.isModified("password"))
     this.password = await bcrypt.hash(this.password, 12);

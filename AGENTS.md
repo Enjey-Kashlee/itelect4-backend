@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This Express, MongoDB, and TypeScript backend serves Campus Lost & Found. `src/types/` defines API and storage types; `src/models/` defines User, Item, and Claim schemas. `src/routes/` handles authentication, claims, and the item catalogue. `src/middleware/` holds JWT authentication, runtime input checks, and JSON errors. `src/app.ts` assembles Express; `src/app.ts` exports the hosting app and waits for MongoDB in request middleware; `src/server.ts` connects MongoDB and starts local HTTP. `src/data/` and `src/scripts/` seed sample items. `tests/` holds model and HTTP tests; `postman/` holds runnable requests; `docs/learning-guide.md` teaches the code. TypeScript emits to ignored `dist/`.
+This Express, MongoDB, and TypeScript backend serves Campus Lost & Found. `src/types/` defines API and storage types; `src/models/` defines User, Item, and Claim schemas. `src/routes/` handles authentication, claims, and the item catalogue. `src/middleware/` holds JWT authentication, runtime input checks, and JSON errors. `src/app.ts` assembles Express; `src/app.ts` exports the hosting app and waits for MongoDB in request middleware; `src/server.ts` connects MongoDB and starts local HTTP. `src/data/` holds transaction/provisioning helpers and test sample data. `tests/` holds model and HTTP tests; README.md documents setup, the API and office workflow. TypeScript emits to ignored `dist/`.
 
 ## Build, Test, and Development Commands
 
@@ -13,7 +13,6 @@ This Express, MongoDB, and TypeScript backend serves Campus Lost & Found. `src/t
 - `npm start`: run compiled `dist/server.js` after building.
 - `npm test`: run the existing Node suite against temporary MongoDB, then isolated GT6 Vitest/Supertest tests.
 - `npm run test:gt6`: run isolated GT6 route tests; requires a local or environment `JWT_SECRET`.
-- `npm run seed:items`: insert sample items without overwriting existing records.
 
 There is no lint script. Use Node.js 24.
 
@@ -23,11 +22,11 @@ Use two-space indentation, double quotes, semicolons, and type-only imports. Kee
 
 ## Testing Guidelines
 
-Run `npm test`, `npm run typecheck`, and `npm run build`. Existing tests use Node's runner and mongodb-memory-server; the first run downloads a test binary. GT6 tests in `tests/gt6/` use Vitest/Supertest and mock database access and Gemini. Never use Atlas for automated tests. Cover validation, authentication, ownership, and update rules. No coverage threshold is configured.
+Run `npm test`, `npm run typecheck`, and `npm run build`. Existing tests use Node's runner and disposable MongoDB replica sets through mongodb-memory-server; the first run downloads a test binary. GT6 tests in `tests/gt6/` use Vitest/Supertest and mock database access and Gemini. Never use Atlas for automated tests. Cover validation, authentication, ownership, and update rules. No coverage threshold is configured.
 
 ## Domain Notes
 
-Course maps to Item; Submission maps to Claim. Items identify their reporter. Claims reference an existing item and authenticated claimant. New claims start pending; status replaces the backend verified flag. Proof requires 10–1000 characters. Every claim operation filters by claimantId from the token. Students cannot set ownership, dates, roles, or status. Item reads are shared. Item reads are public. Frontend integration is GT4 Part 2; administrator review remains later work.
+Course maps to Item; Submission maps to Claim. Items identify their reporter. Claims reference an existing item and authenticated claimant. New claims start pending; status replaces the backend verified flag. Items marked found cannot receive new claims or claim reassignment (409). Existing claims remain readable. Claim list/detail responses include item title and location through a populated virtual, while preserving itemId. Proof requires 10–1000 characters. Student claim operations filter by claimantId from the token; separate admin routes enforce the current database role. Reviewed claims are immutable, including deletion. Approval and competing rejection are transactional, and submissions/reassignment serialize on the item version. Students cannot set ownership, dates, roles, or status. Item reads are shared. Item reads are public. One administrator enters Lost item reports for a selected active student reporter and reviews claims. Approval marks the item Found and rejects competing pending claims; the approved student sees office pickup instructions. Public registration remains student-only.
 
 ## Security & Configuration
 
@@ -35,4 +34,4 @@ Configure MONGODB_URI, JWT_SECRET, PORT, and CORS_ORIGIN using `.env.example`. N
 
 ## Commit & Pull Request Guidelines
 
-Use concise imperative subjects with prefixes such as feat: or docs:. Work for GT4 Part 2 on gt4-part2. Ask the user before every push, including tags. PRs should explain behavior, reference the course task, list checks, and mention configuration/API changes. Submit both repositories through merged PRs; tag gt4 on both only after integration and live deployment checks pass, following the Session 10 handout.
+Use short-lived `codex/` feature branches from main for new work. Use concise imperative commit subjects with prefixes such as feat:, fix:, docs: or chore:. Keep tests with the behavior they verify and separate dependency updates from feature changes. Ask the user before every push, including tags. PRs should explain behavior, list checks, and identify configuration/API changes. Deployment and release tags require separate authorization.
