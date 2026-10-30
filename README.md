@@ -2,93 +2,114 @@
 
 [![CI](https://github.com/Enjey-Kashlee/itelect4-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Enjey-Kashlee/itelect4-backend/actions/workflows/ci.yml)
 
-Campus Lost & Found is a TypeScript/Express API with MongoDB persistence, real registration/login, and five authenticated routes for **Claim**. Items form a public read-only catalogue.
+Express, TypeScript and MongoDB API for the campus lost and found office. One administrator records items handed in by students and reviews ownership claims. Students browse the public catalogue and submit claims with proof of ownership.
 
-## Live application
+## Application links
 
-- Frontend: [https://itelect4-project-mu.vercel.app](https://itelect4-project-mu.vercel.app)
-- Backend API: [https://itelect4-backend-virid.vercel.app](https://itelect4-backend-virid.vercel.app)
-- API checks: [Health](https://itelect4-backend-virid.vercel.app/api/health) · [Items](https://itelect4-backend-virid.vercel.app/api/items)
+- [Frontend](https://itelect4-project-mu.vercel.app)
+- [Backend health](https://itelect4-backend-virid.vercel.app/api/health)
+- [Public item catalogue](https://itelect4-backend-virid.vercel.app/api/items)
+- [Frontend repository](https://github.com/Enjey-Kashlee/itelect4-project)
 
-## Run locally
+Changes to the shared API should be deployed with the corresponding frontend changes. Local verification does not confirm which revision is deployed at these URLs.
 
-Use Node.js 24. Install dependencies with `npm ci`. Copy `.env.example` to `.env` if you do not already have one, then fill in:
+## Local setup
 
-| Variable         | Meaning                                                                                 |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| `MONGODB_URI`    | Atlas connection string including your database name                                    |
-| `JWT_SECRET`     | Random secret of at least 32 characters                                                 |
-| `GEMINI_API_KEY` | Server-only Gemini key for AI reviews; other routes do not require it                   |
-| `PORT`           | Server port; defaults to 4000                                                           |
-| `CORS_ORIGIN`    | Required allowed frontend origins, comma separated; use `http://localhost:5173` locally |
+Use Node.js 24. Run `npm ci`, then copy `.env.example` to `.env` if one does not already exist.
 
-Generate a secret locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Atlas needs a database user and network access for the machine running the API. Keep secrets in `.env` locally and your host's environment settings when deploying.
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URI` | MongoDB replica-set or sharded-cluster connection string, including the database name |
+| `JWT_SECRET` | Random signing secret containing at least 32 characters |
+| `CORS_ORIGIN` | Allowed frontend origins, comma separated; normally `http://localhost:5173` locally |
+| `PORT` | Optional HTTP port; defaults to 4000 |
+| `GEMINI_API_KEY` | Optional server-only key for AI feedback; other features do not require it |
+
+Never commit real environment files, passwords, tokens or database credentials. Do not put backend secrets in frontend environment variables.
 
 ```sh
-npm run seed:items
 npm run dev
 ```
 
-The seed inserts three sample items and one sample reporter with a random password. It preserves existing items and claims when repeated. Register your own account to log in; the sample reporter is not a demo login account.
+For a compiled server:
 
-Check `GET http://localhost:4000/api/health` for `{ "ok": true, "db": true }`. Local startup connects MongoDB before accepting requests. On Vercel, request middleware connects before handling a request. Concurrent requests share the connection attempt, and subsequent requests reuse the open connection. Both paths wait for the unique email index before registration can run.
+```sh
+npm run build
+npm start
+```
+
+`GET /api/health` reports database connectivity. Both local startup and hosted request handling wait for the user indexes, including the single-admin constraint.
+
+Claim submission, item reassignment and admin decisions require MongoDB transactions. Standalone MongoDB cannot perform these operations; the API returns 503 rather than making partial writes.
+
+## Office workflow
+
+1. A student hands an item to the office.
+2. The admin records it as **Lost**, selecting the registered active student who reported it.
+3. Other students open its details and submit ownership proof.
+4. The admin approves or rejects pending claims.
+5. Approval marks the item **Found**, approves the selected claim and rejects competing pending claims together. The approved student receives office pickup instructions.
+
+Found items cannot receive new claims. Decisions are final, and reviewed claims cannot be edited or deleted. Physical collection is handled at the office and is not recorded as completed by this version.
+
+Public registration creates students only. The database permits one `security_admin` record, including inactive accounts. There is no default admin password or public admin-registration endpoint. There is no bundled account-provisioning CLI. Private provisioning logic remains in `src/data/setupAdmin.ts` for a deliberate owner-operated process against the chosen database. It validates credentials, hashes passwords, refuses an email already registered to a student, and leaves an existing admin unchanged. A real admin has not yet been provisioned as part of this work.
 
 ## API
 
-Register with `{ "name": "Student", "email": "student@example.com", "password": "LearnClaims123!" }`; log in with email and password. Send the returned token as `Authorization: Bearer <token>` on protected requests.
+Protected routes use `Authorization: Bearer <token>`. Login accepts email/password and returns `{ token, user }`; tokens expire after two hours. The server checks the account's current activity and role on protected requests.
 
-| Method | Path                 | Successful result                              |
-| ------ | -------------------- | ---------------------------------------------- |
-| GET    | `/api/health`        | 200, database health                           |
-| POST   | `/api/auth/register` | 201, user without password                     |
-| POST   | `/api/auth/login`    | 200, `{ token, user }`                         |
-| GET    | `/api/items`         | 200, public shared item catalogue              |
-| GET    | `/api/items/:id`     | 200, public item                               |
-| GET    | `/api/claims`        | 200, only your claims, newest first            |
-| GET    | `/api/claims/:id`    | 200, your claim                                |
-| POST   | `/api/claims`        | 201, new claim                                 |
-| PATCH  | `/api/claims/:id`    | 200, updated claim                             |
-| DELETE | `/api/claims/:id`    | 204, empty body                                |
-| POST   | `/api/ai`            | 200, authenticated AI claim preparation review |
+| Method | Endpoint | Access and behavior |
+| --- | --- | --- |
+| GET | `/api/health` | Public database health |
+| POST | `/api/auth/register` | Public student registration: name, email and password |
+| POST | `/api/auth/login` | Public login |
+| GET | `/api/items` | Public item catalogue |
+| GET | `/api/items/:id` | Public item details |
+| POST | `/api/items` | Admin only; title, description, location and selected `reportedById`; initial status is Lost |
+| GET | `/api/claims` | Only the authenticated user's claims |
+| GET | `/api/claims/:id` | Only the authenticated user's claim |
+| POST | `/api/claims` | Student only; `itemId` and `proofDescription` |
+| PATCH | `/api/claims/:id` | Owner only; update a pending claim's item and/or proof |
+| DELETE | `/api/claims/:id` | Owner only; delete a pending claim |
+| GET | `/api/admin/students` | Admin-only active student ID/name/email selector |
+| GET | `/api/admin/claims?status=pending` | Admin-only pending, approved or rejected claims with item/claimant context |
+| PATCH | `/api/admin/claims/:id/status` | Admin only; exactly `{ "status": "approved" }` or `{ "status": "rejected" }` |
+| POST | `/api/ai` | Authenticated ownership-description feedback; never approves or submits a claim |
 
-POST takes `itemId` (a 24-character ObjectId string from the item catalogue) and `proofDescription` (10–1000 characters after trimming). PATCH accepts either or both of those fields. The server supplies claimantId, claimedAt, and initial status `pending`. Status is an enum: pending/approved/rejected. Students cannot set status, roles, dates, or ownership. Administrator review endpoints belong to a later extension.
+IDs are 24-character ObjectId strings. Claim proof must contain 10–1000 characters after trimming. Ownership, submission dates, decision metadata and initial status come from the server. Claim statuses are `pending`, `approved` and `rejected`.
 
-All five claim routes require authentication and scope their operations to the token's user. Another user's claim and a missing claim both return 404. Input errors return 400, missing/invalid authentication 401, disallowed browser origins 403, duplicate registration 409, and oversized bodies 413. Unexpected failures return a generic JSON 500.
+Public items include reporter ID/name, excluding email and account details. Owner claim responses include item title/location; administrator lists also include limited claimant context. Claim proof remains private. Approval returns `{ claim, rejectedOtherClaimsCount }` and records `reviewedById`/`reviewedAt`.
 
-## Verify and learn
+Errors use JSON messages: 400 for invalid input, 401 for unavailable/invalid sessions, 403 for denied access or disallowed origins, 404 for missing records, 409 for conflicts or final decisions, and 413 for oversized requests. Another user's claim also returns 404. Unexpected errors do not expose internal details.
 
-Format all supported project files with `npm run format`. Check formatting without changing files with `npm run format:check`. Prettier uses two-space indentation, double quotes, and semicolons; generated files and environment files are excluded.
-
-For formatting on save in VS Code, install the **Prettier - Code formatter** extension (`esbenp.prettier-vscode`), select it as the default formatter, and enable **Editor: Format On Save**. The extension uses this project's installed Prettier and configuration.
+## Checks
 
 ```sh
 npm test
 npm run typecheck
 npm run build
-npm start
 ```
 
-`npm test` runs the existing Node regression suite (`npm run test:unit`), then the GT6 Vitest/Supertest suite (`npm run test:gt6`). `npm run test:watch` watches the GT6 suite. The existing suite uses a temporary MongoDB process, never Atlas; its first run downloads a MongoDB binary to the operating system's temporary directory. The GT6 suite mocks the database connection, active-user lookup, and Gemini boundary while exercising the real Express app and JWT middleware. It checks missing/invalid tokens, a valid token reaching prompt validation, and inactive accounts. It never contacts Atlas or Gemini.
+`npm test` runs the Node regression tests and the isolated Vitest/Supertest authentication suite. API tests use temporary local MongoDB replica sets, never the application database. The first run downloads a MongoDB test binary. Tests cover student ownership, admin authorization, reporter selection, singleton provisioning, transaction rollback and concurrent claim decisions.
 
-GT6 tests need a `JWT_SECRET` of at least 32 characters, from the local ignored `.env` or the environment. Other configuration is supplied with dummy values in `vitest.config.mts`. On GitHub, add a separate random test-only `JWT_SECRET` under this repository's **Settings → Secrets and variables → Actions**. It need not match Vercel or local development. Both suites, type checks, and the build run on every push and pull request. The optional GT5 `test:ai` simulation remains separate and needs its simulation service as described in `docs/gt5-ai.md`.
+The Vitest suite needs a test-only `JWT_SECRET` of at least 32 characters; other settings use dummy values. GitHub Actions supplies this from the repository secret named `JWT_SECRET`, runs `npm ci`, and checks types, tests and the build. The signing secret used by CI should be separate from application secrets.
 
-`dev` runs TypeScript with watching; `typecheck` checks application and GT6 test types; `build` emits application JavaScript into `dist/`; `start` runs that JavaScript.
+`npm run test:watch` watches the Vitest suite. `npm run format:check` checks Prettier formatting; `npm run format` writes formatting changes. There is no lint command.
 
-## Architecture
+The optional `npm run test:ai` integration suite is separate from `npm test`. It requires an externally supplied Gemini-compatible simulation at `http://127.0.0.1:4900/gemini`; that service is not bundled. See [the integration tests](tests/integration/ai.test.ts) for its contract.
 
-```mermaid
-flowchart LR
-  browser["React + Vite on Vercel"] -->|"HTTP + Bearer token for private routes"| api["Express API on Vercel"]
-  api -->|Mongoose| db[(MongoDB Atlas)]
-  api -->|Server-only API key| gemini[Gemini API]
-```
+## Project layout
+
+- `src/routes/`: authentication, item, student-claim, admin and AI endpoints.
+- `src/middleware/`: bearer authentication, role checks, runtime validation and errors.
+- `src/models/` and `src/types/`: MongoDB schemas and API/storage types.
+- `src/data/`: transactional claim helpers, private admin provisioning logic and sample-data fixtures used by tests.
+- `src/config/`: environment validation and database connection management.
+- `src/app.ts`: assembled hosting app; `src/server.ts`: local HTTP entry point.
+- `tests/`: unit, API, concurrency and isolated authentication tests.
+
+Compiled output in `dist/`, dependencies and real environment files are ignored.
 
 ## AI-use disclosure
 
-OpenAI Codex assisted with implementation, test design, CI configuration, documentation, and debugging. The author is responsible for reviewing, understanding, and explaining the submitted code.
-
-Import `postman/GT4-Part1.postman_collection.json` and optionally `postman/Local.postman_environment.json` into Postman. Seed items and start the API, then run all 17 requests in order. The collection saves tokens and IDs automatically, checks ownership/validation, and deletes its test claim. Each run registers two uniquely named demo accounts. Use a disposable database for repeated collection runs if you do not want those accounts in your app database. Token values are blank in the committed collection.
-
-Read [the Session 9 study guide](docs/session9-codebase-study.md) beside your source code. It traces registration, login, and a claim request through this app and explains the lesson concepts using your actual files.
-
-For GT5 setup, the AI contract, simulation tests, and deployment/submission steps, read [AI claim preparation](docs/gt5-ai.md). Run `npm run try-ai` after saving the Gemini key to check one real AI reply. `postman/GT5-AI.postman_collection.json` provides six runnable GT5 requests.
+OpenAI Codex assisted with implementation, test design, CI configuration, documentation and debugging. The author is responsible for reviewing, understanding and explaining the submitted code.
