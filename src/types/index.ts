@@ -19,6 +19,7 @@ export interface Item {
   status: "lost" | "found";
   location: string;
   reportedById: ID;
+  reportedBy?: Pick<User, "id" | "name"> | null;
 }
 
 export interface Claim {
@@ -28,14 +29,21 @@ export interface Claim {
   claimedAt: Date;
   proofDescription: string;
   status: ClaimStatus;
+  item?: Pick<Item, "id" | "title" | "location"> | null;
+  reviewedById?: ID;
+  reviewedAt?: Date;
 }
 
 export type UserDoc = Omit<User, "id"> & { password: string };
-export type ItemDoc = Omit<Item, "id" | "reportedById"> & {
+export type ItemDoc = Omit<Item, "id" | "reportedById" | "reportedBy"> & {
   reportedById: Types.ObjectId;
 };
-export type ClaimDoc = Omit<Claim, "id" | "claimantId" | "itemId"> & {
+export type ClaimDoc = Omit<
+  Claim,
+  "id" | "claimantId" | "itemId" | "item" | "reviewedById"
+> & {
   itemId: Types.ObjectId;
+  reviewedById?: Types.ObjectId;
   claimantId: Types.ObjectId;
 };
 

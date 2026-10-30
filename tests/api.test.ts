@@ -7,7 +7,7 @@ import { join } from "node:path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose, { Types } from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { User } from "../src/models/User";
 import { Item } from "../src/models/Item";
 import { Claim } from "../src/models/Claim";
@@ -15,7 +15,7 @@ import { Claim } from "../src/models/Claim";
 const jwtSecret = "a-long-test-secret-used-only-for-this-test-suite";
 const password = "LearnClaims123!";
 const proof = "My initials are engraved on the underside of this item.";
-let database: MongoMemoryServer | undefined;
+let database: MongoMemoryReplSet | undefined;
 let server: Server | undefined;
 let baseUrl = "";
 let aliceToken = "";
@@ -47,8 +47,9 @@ async function request(
 }
 
 before(async () => {
-  database = await MongoMemoryServer.create({
+  database = await MongoMemoryReplSet.create({
     binary: { downloadDir: join(tmpdir(), "itelect4-mongodb-binaries") },
+    replSet: { count: 1 },
   });
   await mongoose.connect(database.getUri(), { dbName: "claims_api_test" });
   await User.init();
@@ -92,7 +93,7 @@ before(async () => {
   const item = await Item.create({
     title: "Blue Water Bottle",
     description: "A bottle with initials underneath.",
-    status: "found",
+    status: "lost",
     location: "Campus Library",
     reportedById: aliceId,
   });
@@ -339,6 +340,64 @@ test("other users cannot read, edit, delete, or see someone's claim", async () =
   assert.ok(await Claim.findById(id));
 });
 
+test("found items reject new claims and reassignment while existing claims stay readable", async () => {
+  const foundItem = await Item.create({
+    title: "Recovered umbrella",
+    description: "A black umbrella.",
+    status: "found",
+    location: "Student lounge",
+    reportedById: aliceId,
+  });
+  const beforeCount = await Claim.countDocuments();
+  const rejected = await request("POST", "/api/claims", {
+    itemId: String(foundItem._id),
+    proofDescription: proof,
+  });
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.body.message, "Found items can no longer be claimed.");
+  assert.equal(await Claim.countDocuments(), beforeCount);
+  const created = await request("POST", "/api/claims", {
+    itemId,
+    proofDescription: proof,
+  });
+  assert.equal(created.status, 201);
+  const reassigned = await request("PATCH", `/api/claims/${created.body.id}`, {
+    itemId: String(foundItem._id),
+  });
+  assert.equal(reassigned.status, 409);
+  assert.equal(
+    (await request("GET", `/api/claims/${created.body.id}`)).body.itemId,
+    itemId,
+  );
+  const historical = await Claim.create({
+    itemId: foundItem._id,
+    claimantId: aliceId,
+    proofDescription: proof,
+  });
+  const detail = await request("GET", `/api/claims/${historical._id}`);
+  assert.equal(detail.status, 200);
+  assert.deepEqual(detail.body.item, {
+    id: String(foundItem._id),
+    title: "Recovered umbrella",
+    location: "Student lounge",
+  });
+  const listed = await request("GET", "/api/claims");
+  assert.deepEqual(
+    listed.body.find(
+      (claim: { id: string }) => claim.id === String(historical._id),
+    ).item,
+    detail.body.item,
+  );
+  assert.equal(
+    (
+      await request("PATCH", `/api/claims/${historical._id}`, {
+        proofDescription: proof,
+      })
+    ).status,
+    200,
+  );
+});
+
 test("claim requests enforce existing items, valid IDs, and proof limits", async () => {
   const missingId = new Types.ObjectId().toString();
   assert.equal(
@@ -395,6 +454,13 @@ test("the public item catalogue supplies IDs for claims without authentication",
   const item = await request("GET", `/api/items/${itemId}`, undefined, null);
   assert.equal(item.status, 200);
   assert.equal(item.body.id, itemId);
+  const listedItem = items.body.find(
+    (entry: { id: string }) => entry.id === itemId,
+  );
+  for (const entry of [listedItem, item.body]) {
+    assert.equal(entry.reportedById, aliceId);
+    assert.deepEqual(entry.reportedBy, { id: aliceId, name: "Alice Updated" });
+  }
   assert.equal(
     (await request("GET", "/api/items/hello", undefined, null)).status,
     400,
@@ -410,6 +476,35 @@ test("the public item catalogue supplies IDs for claims without authentication",
     ).status,
     404,
   );
+});
+
+test("items with a missing reporter remain readable without losing the reporter ID", async () => {
+  const reporterId = new Types.ObjectId();
+  const item = await Item.create({
+    title: "Unclaimed notebook",
+    description: "A blue notebook.",
+    status: "found",
+    location: "Library",
+    reportedById: reporterId,
+  });
+  try {
+    const detail = await request(
+      "GET",
+      `/api/items/${item._id}`,
+      undefined,
+      null,
+    );
+    const list = await request("GET", "/api/items", undefined, null);
+    for (const entry of [
+      detail.body,
+      list.body.find((entry: { id: string }) => entry.id === String(item._id)),
+    ]) {
+      assert.equal(entry.reportedById, String(reporterId));
+      assert.equal(entry.reportedBy, null);
+    }
+  } finally {
+    await Item.deleteOne({ _id: item._id });
+  }
 });
 
 test("health, JSON errors, CORS, and malformed request bodies behave consistently", async () => {
